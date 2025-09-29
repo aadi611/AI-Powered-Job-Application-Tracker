@@ -10,7 +10,7 @@ A comprehensive job application tracking system with Gmail integration, automate
 ## ✨ Features
 
 ### 🤖 **Smart Automation**
-- **Gmail Integration**: Automatically scans emails for job applications
+- **Gmail Integration**: Automatically scans any emails for job applications
 - **Intelligent Parsing**: Extracts company names, positions, and status from emails
 - **Daily Sync**: Automated background processing with Windows Task Scheduler
 - **LinkedIn Support**: Import applications from LinkedIn data exports
