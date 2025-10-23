@@ -1,15 +1,25 @@
-const state = { apps: [] };
+const state = { apps: [], chart: null };
 
 async function fetchApps(){
+  // Build query string for date filtering
+  const startDate = document.getElementById('start-date').value;
+  const endDate = document.getElementById('end-date').value;
+  let url = '/api/list-applications';
+  const params = new URLSearchParams();
+  if(startDate) params.append('start_date', startDate + 'T00:00:00');
+  if(endDate) params.append('end_date', endDate + 'T23:59:59');
+  if(params.toString()) url += '?' + params.toString();
+
   const [statsRes, listRes] = await Promise.all([
     fetch('/api/dashboard-stats'),
-    fetch('/api/list-applications')
+    fetch(url)
   ]);
   const stats = await statsRes.json();
   const apps = await listRes.json();
   state.apps = apps;
   renderStats(stats);
   renderApps(apps);
+  renderChart(stats);
 }
 
 function renderStats(stats){
@@ -30,22 +40,30 @@ function renderStats(stats){
 function makeAppCard(a){
   const div = document.createElement('div');
   div.className = 'card mb-2 app-card';
+  const statusColor = {Applied:'info',Interview:'warning',Offer:'success',Rejected:'danger'}[a.status] || 'secondary';
+  const hasNotes = a.notes && a.notes.trim();
   div.innerHTML = `
-    <div class="card-body d-flex justify-content-between align-items-start">
-      <div>
-        <div class="fw-bold">${escapeHtml(a.company)}</div>
-        <div class="app-meta">${escapeHtml(a.position)} · <span class="badge bg-secondary">${escapeHtml(a.source)}</span></div>
-      </div>
-      <div class="text-end">
-        <div><span class="badge bg-info text-dark">${escapeHtml(a.status)}</span></div>
-        <div class="mt-2">
-          <div class="btn-group" role="group">
-            <button class="btn btn-sm btn-outline-primary" onclick="updateStatus(${a.id}, 'Interview')">Interview</button>
-            <button class="btn btn-sm btn-outline-success" onclick="updateStatus(${a.id}, 'Offer')">Offer</button>
-            <button class="btn btn-sm btn-outline-danger" onclick="updateStatus(${a.id}, 'Rejected')">Reject</button>
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div class="flex-grow-1">
+          <div class="fw-bold fs-5">${escapeHtml(a.company)}</div>
+          <div class="text-muted">${escapeHtml(a.position)}</div>
+          <div class="mt-1">
+            <span class="badge bg-${statusColor}">${escapeHtml(a.status)}</span>
+            <span class="badge bg-secondary ms-1"><i class="bi bi-building"></i> ${escapeHtml(a.source)}</span>
+            <small class="text-muted ms-2"><i class="bi bi-calendar"></i> ${new Date(a.applied_at).toLocaleDateString()}</small>
           </div>
         </div>
+        <div class="text-end">
+          <button class="btn btn-sm btn-outline-primary" onclick="openEditModal(${a.id})" title="Edit">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="openDeleteModal(${a.id})" title="Delete">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
       </div>
+      ${hasNotes ? `<div class="alert alert-light mb-0 mt-2 small"><i class="bi bi-sticky"></i> ${escapeHtml(a.notes)}</div>` : ''}
     </div>
   `;
   return div;
@@ -67,14 +85,16 @@ async function addApplication(){
   const company = document.getElementById('company').value.trim();
   const position = document.getElementById('position').value.trim();
   const source = document.getElementById('source').value;
+  const notes = document.getElementById('notes').value.trim();
   if(!company || !position){
     alert('Company and position are required');
     return;
   }
-  const res = await fetch('/api/add-application', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({company, position, source}) });
+  const res = await fetch('/api/add-application', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({company, position, source, notes}) });
   if(res.ok){
     document.getElementById('company').value = '';
     document.getElementById('position').value = '';
+    document.getElementById('notes').value = '';
     fetchApps();
   } else {
     const err = await res.json();
