@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Job Tracker — MVP</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#"><i class="bi bi-briefcase-fill"></i> Job Tracker</a>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-light" id="sync-btn"><i class="bi bi-envelope-paper"></i> Sync Gmail</button>
+          <button class="btn btn-outline-light" id="report-btn"><i class="bi bi-download"></i> Report</button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      <!-- Date Range Filter -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Start Date</label>
+              <input type="date" id="start-date" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">End Date</label>
+              <input type="date" id="end-date" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Status Filter</label>
+              <select id="filter-status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option>Applied</option>
+                <option>Interview</option>
+                <option>Offer</option>
+                <option>Rejected</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small mb-1">Search</label>
+              <input id="search" class="form-control form-control-sm" placeholder="Company or position">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-lg-8">
+          <div class="card shadow-sm mb-3">
+            <div class="card-body">
+              <h5 class="card-title mb-0">Applications</h5>
+              <small class="text-muted">Track and manage your job applications</small>
+            </div>
+          </div>
+
+          <div id="apps-list" class="mt-3"></div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card shadow-sm mb-3">
+            <div class="card-body">
+              <h5 class="card-title"><i class="bi bi-plus-circle"></i> Add Application</h5>
+              <div class="mb-2">
+                <input id="company" class="form-control" placeholder="Company">
+              </div>
+              <div class="mb-2">
+                <input id="position" class="form-control" placeholder="Position">
+              </div>
+              <div class="mb-2">
+                <select id="source" class="form-select">
+                  <option value="manual">Manual</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="gmail">Gmail</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <textarea id="notes" class="form-control" rows="2" placeholder="Notes (optional)"></textarea>
+              </div>
+              <div class="d-grid">
+                <button id="add-btn" class="btn btn-primary">Add Application</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm mb-3">
+            <div class="card-body">
+              <h6 class="card-title"><i class="bi bi-bar-chart-fill"></i> Stats Overview</h6>
+              <div id="stats" class="d-flex gap-2 flex-wrap mb-3"></div>
+              <canvas id="statusChart" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Edit Application</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="edit-id">
+            <div class="mb-3">
+              <label class="form-label">Company</label>
+              <input id="edit-company" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Position</label>
+              <input id="edit-position" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Source</label>
+              <select id="edit-source" class="form-select">
+                <option value="manual">Manual</option>
+                <option value="linkedin">LinkedIn</option>
+                <option value="gmail">Gmail</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Status</label>
+              <select id="edit-status" class="form-select">
+                <option>Applied</option>
+                <option>Interview</option>
+                <option>Offer</option>
+                <option>Rejected</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea id="edit-notes" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="save-edit-btn">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-trash"></i> Confirm Delete</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete this application?</p>
+            <input type="hidden" id="delete-id">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/js/main.js"></script>
+  </body>
+</html>
