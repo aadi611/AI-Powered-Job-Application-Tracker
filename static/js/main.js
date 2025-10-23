@@ -122,12 +122,103 @@ function escapeHtml(str){
   return String(str).replace(/[&<>\"]+/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[s]));
 }
 
+function openEditModal(id){
+  const app = state.apps.find(a => a.id === id);
+  if(!app) return;
+  document.getElementById('edit-id').value = app.id;
+  document.getElementById('edit-company').value = app.company;
+  document.getElementById('edit-position').value = app.position;
+  document.getElementById('edit-source').value = app.source;
+  document.getElementById('edit-status').value = app.status;
+  document.getElementById('edit-notes').value = app.notes || '';
+  const modal = new bootstrap.Modal(document.getElementById('editModal'));
+  modal.show();
+}
+
+async function saveEdit(){
+  const id = document.getElementById('edit-id').value;
+  const data = {
+    company: document.getElementById('edit-company').value.trim(),
+    position: document.getElementById('edit-position').value.trim(),
+    source: document.getElementById('edit-source').value,
+    status: document.getElementById('edit-status').value,
+    notes: document.getElementById('edit-notes').value.trim()
+  };
+  if(!data.company || !data.position){
+    alert('Company and position are required');
+    return;
+  }
+  const res = await fetch(`/api/edit-application/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  if(res.ok){
+    const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+    modal.hide();
+    fetchApps();
+  } else {
+    alert('Failed to update');
+  }
+}
+
+function openDeleteModal(id){
+  document.getElementById('delete-id').value = id;
+  const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+  modal.show();
+}
+
+async function confirmDelete(){
+  const id = document.getElementById('delete-id').value;
+  const res = await fetch(`/api/delete-application/${id}`, { method:'DELETE' });
+  if(res.ok){
+    const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+    modal.hide();
+    fetchApps();
+  } else {
+    alert('Failed to delete');
+  }
+}
+
+function renderChart(stats){
+  const ctx = document.getElementById('statusChart');
+  if(!ctx) return;
+  
+  const labels = Object.keys(stats.by_status || {});
+  const data = Object.values(stats.by_status || {});
+  const colors = labels.map(l => ({Applied:'#0dcaf0',Interview:'#ffc107',Offer:'#198754',Rejected:'#dc3545'}[l] || '#6c757d'));
+  
+  if(state.chart){
+    state.chart.destroy();
+  }
+  
+  state.chart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: colors,
+        borderWidth: 2,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' }
+      }
+    }
+  });
+}
+
 // Wire up UI events
 document.getElementById('add-btn')?.addEventListener('click', addApplication);
 document.getElementById('sync-btn')?.addEventListener('click', syncGmail);
 document.getElementById('report-btn')?.addEventListener('click', generateReport);
 document.getElementById('search')?.addEventListener('input', fetchApps);
 document.getElementById('filter-status')?.addEventListener('change', fetchApps);
+document.getElementById('start-date')?.addEventListener('change', fetchApps);
+document.getElementById('end-date')?.addEventListener('change', fetchApps);
+document.getElementById('save-edit-btn')?.addEventListener('click', saveEdit);
+document.getElementById('confirm-delete-btn')?.addEventListener('click', confirmDelete);
 
 // Initial load
 fetchApps();
