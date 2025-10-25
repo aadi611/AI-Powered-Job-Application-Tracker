@@ -1,0 +1,11 @@
+id,company,position,source,status,notes,applied_at
+10,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:28:02.184402
+9,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:28:02.024836
+8,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:28:01.854124
+7,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:28:01.699978
+6,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:27:59.353150
+5,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:27:58.284320
+4,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:17:55.109953
+3,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:17:54.643972
+2,Example Corp,Software Engineer,gmail,Applied,,2025-10-23T14:17:49.725956
+1,Demo Co,Backend Engineer,manual,Applied,,2025-10-23T13:45:47.142257
