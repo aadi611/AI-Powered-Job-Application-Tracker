@@ -24,6 +24,8 @@ async function fetchApps(){
 
 function renderStats(stats){
   const container = document.getElementById('stats');
+  if(!container) return; // Skip if stats container doesn't exist (not on this page)
+  
   container.innerHTML = '';
   const totalCard = document.createElement('div');
   totalCard.className = 'stat p-2 border rounded text-center me-2';
@@ -71,14 +73,24 @@ function makeAppCard(a){
 
 function renderApps(apps){
   const list = document.getElementById('apps-list');
-  const q = document.getElementById('search').value.toLowerCase();
-  const statusFilter = document.getElementById('filter-status').value;
+  if(!list) return; // Skip if apps list doesn't exist (not on this page)
+  
+  const q = document.getElementById('search')?.value.toLowerCase() || '';
+  const statusFilter = document.getElementById('filter-status')?.value || '';
   list.innerHTML = '';
-  apps.filter(a => {
+  
+  const filtered = apps.filter(a => {
     if(statusFilter && a.status !== statusFilter) return false;
     if(!q) return true;
     return (a.company + ' ' + a.position).toLowerCase().includes(q);
-  }).forEach(a => list.appendChild(makeAppCard(a)));
+  });
+  
+  if(filtered.length === 0){
+    list.innerHTML = '<div class="alert alert-info"><i class="bi bi-info-circle"></i> No applications found. Add your first application to get started!</div>';
+    return;
+  }
+  
+  filtered.forEach(a => list.appendChild(makeAppCard(a)));
 }
 
 async function addApplication(){
