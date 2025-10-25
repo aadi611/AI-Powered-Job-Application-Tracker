@@ -39,6 +39,10 @@ with app.app_context():
 def index():
     return render_template('index.html')
 
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
 @app.route('/api/dashboard-stats', methods=['GET'])
 def dashboard_stats():
     total = Application.query.count()

@@ -16,10 +16,12 @@ A comprehensive job application tracking system with Gmail integration, automate
 - **LinkedIn Support**: Import applications from LinkedIn data exports
 
 ### 🌐 **Modern Web Interface**
-- **Interactive Dashboard**: Real-time charts and statistics
-- **Application Management**: Sort, filter, and update applications
+- **Interactive Dashboard**: Real-time doughnut charts with Chart.js
+- **Full CRUD Operations**: Create, Read, Update, and Delete applications
+- **Advanced Filtering**: Date range picker and multi-status filtering
+- **Notes System**: Add detailed notes to each application
 - **Responsive Design**: Works seamlessly on desktop and mobile
-- **One-Click Actions**: Gmail sync, report generation, status updates
+- **One-Click Actions**: Edit, delete, sync, and generate reports instantly
 
 ### 📊 **Advanced Analytics**
 - **Status Tracking**: Applied → Under Review → Interview → Offer/Rejection
@@ -105,10 +107,15 @@ python job_tracker_bot.py
 ```
 
 ### Web Interface
-1. **Dashboard**: Overview of all applications with charts
-2. **Applications**: Manage and update application status
-3. **Add New**: Quick form to add manual applications
-4. **Settings**: Configure Gmail sync and view system status
+1. **Dashboard**: Visual doughnut chart showing application status breakdown
+2. **Applications List**: Card-based view with edit/delete actions
+3. **Add New**: Quick form to add applications with notes field
+4. **Advanced Filters**: 
+   - Date range picker (start and end dates)
+   - Status multi-filter
+   - Real-time search by company or position
+5. **Edit Modal**: Update any application details including notes
+6. **Delete Confirmation**: Safe deletion with confirmation dialog
 
 ### Gmail Integration
 The system automatically detects job-related emails using keywords:
@@ -152,11 +159,14 @@ job-tracker/
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/dashboard-stats` | GET | Get dashboard statistics |
-| `/api/add-application` | POST | Add new application |
-| `/api/update-status` | POST | Update application status |
+| `/api/dashboard-stats` | GET | Get dashboard statistics and charts data |
+| `/api/list-applications` | GET | List all applications (supports date filtering) |
+| `/api/add-application` | POST | Add new application with notes |
+| `/api/edit-application/<id>` | PUT | Update existing application |
+| `/api/delete-application/<id>` | DELETE | Delete an application |
+| `/api/update-status` | POST | Quick update application status |
 | `/api/sync-gmail` | POST | Trigger Gmail sync |
-| `/api/generate-report` | GET | Download Excel report |
+| `/api/generate-report` | GET | Download CSV report |
 
 ## 📈 Technical Highlights
 
