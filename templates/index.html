@@ -6,31 +6,46 @@
     <title>Applications — Job Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/apple-style.css">
     <style>
-      .bg-gradient-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      }
       .stat-box {
-        padding: 10px;
-        border-radius: 8px;
+        padding: 16px;
+        border-radius: var(--radius-md);
         text-align: center;
-        min-width: 80px;
+        min-width: 100px;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border-color);
+        transition: var(--transition-smooth);
+        box-shadow: var(--shadow-sm);
+      }
+      .stat-box:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        border-color: rgba(0, 113, 227, 0.3);
       }
       .stat-box .value {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
+        color: var(--accent-primary);
+        letter-spacing: -0.03em;
       }
       .stat-box .label {
-        font-size: 0.7rem;
+        font-size: 12px;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        opacity: 0.8;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary);
+        font-weight: 600;
       }
     </style>
   </head>
-  <body class="bg-light">
+  <body>
+    <script>
+      // Check authentication
+      if (!sessionStorage.getItem('user')) {
+        window.location.href = '/login';
+      }
+    </script>
     {% set active_page = 'applications' %}
     {% include 'navbar.html' %}
 
@@ -80,25 +95,62 @@
         <div class="col-lg-3">
           <div class="card shadow-sm sticky-top" style="top: 20px;">
             <div class="card-body">
-              <h5 class="card-title"><i class="bi bi-plus-circle"></i> Add Application</h5>
-              <div class="mb-2">
-                <input id="company" class="form-control" placeholder="Company">
-              </div>
-              <div class="mb-2">
-                <input id="position" class="form-control" placeholder="Position">
-              </div>
-              <div class="mb-2">
-                <select id="source" class="form-select">
-                  <option value="manual">Manual</option>
-                  <option value="linkedin">LinkedIn</option>
-                  <option value="gmail">Gmail</option>
-                </select>
-              </div>
+              <h5 class="card-title">
+                <i class="bi bi-plus-circle"></i> Add Application
+              </h5>
+              
+              <!-- AI Parser Toggle -->
               <div class="mb-3">
-                <textarea id="notes" class="form-control" rows="2" placeholder="Notes (optional)"></textarea>
+                <button class="btn btn-sm w-100" id="toggle-ai-parser" style="background: linear-gradient(135deg, var(--purple-accent), var(--purple-light)); color: white; border: none; border-radius: 8px;">
+                  <i class="bi bi-stars"></i> AI Job Parser
+                </button>
               </div>
-              <div class="d-grid">
-                <button id="add-btn" class="btn btn-primary">Add Application</button>
+              
+              <!-- AI Parser Section (Hidden by default) -->
+              <div id="ai-parser-section" style="display: none;">
+                <div class="alert alert-info p-2 mb-2" style="font-size: 12px; background: rgba(139, 92, 246, 0.1); border: 1px solid var(--purple-accent); color: var(--text-primary);">
+                  <i class="bi bi-lightbulb"></i> Paste job description and let AI extract details!
+                </div>
+                <div class="mb-2">
+                  <textarea id="job-description" class="form-control" rows="6" placeholder="Paste full job description here..."></textarea>
+                </div>
+                <div class="d-grid mb-3">
+                  <button id="parse-job-btn" class="btn btn-primary">
+                    <i class="bi bi-magic"></i> Parse with AI
+                  </button>
+                </div>
+                <div id="parse-loading" style="display: none; text-align: center;">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <small class="text-muted d-block mt-1">AI is analyzing...</small>
+                </div>
+                <hr style="border-color: var(--dark-border);">
+              </div>
+              
+              <!-- Manual Entry Form -->
+              <div id="manual-form">
+                <div class="mb-2">
+                  <input id="company" class="form-control" placeholder="Company">
+                </div>
+                <div class="mb-2">
+                  <input id="position" class="form-control" placeholder="Position">
+                </div>
+                <div class="mb-2">
+                  <select id="source" class="form-select">
+                    <option value="manual">Manual</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="indeed">Indeed</option>
+                    <option value="glassdoor">Glassdoor</option>
+                    <option value="company-website">Company Website</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <textarea id="notes" class="form-control" rows="2" placeholder="Notes (optional)"></textarea>
+                </div>
+                <div class="d-grid">
+                  <button id="add-btn" class="btn btn-primary">Add Application</button>
+                </div>
               </div>
             </div>
           </div>
@@ -174,8 +226,377 @@
       </div>
     </div>
 
+    <!-- Application Details Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, var(--purple-accent), var(--purple-light)); color: white;">
+            <div>
+              <h5 class="modal-title mb-1" id="detail-title">
+                <i class="bi bi-briefcase-fill"></i> <span id="detail-position">Position</span>
+              </h5>
+              <small id="detail-company" style="opacity: 0.95;">Company</small>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-0">
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-tabs px-3 pt-3" id="detailTabs" role="tablist" style="border-bottom: 1px solid var(--dark-border);">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                  <i class="bi bi-info-circle"></i> Overview
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">
+                  <i class="bi bi-list-ul"></i> Details
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notes-tab" data-bs-toggle="tab" data-bs-target="#notes" type="button" role="tab">
+                  <i class="bi bi-journal-text"></i> Notes
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="timeline-tab" data-bs-toggle="tab" data-bs-target="#timeline" type="button" role="tab">
+                  <i class="bi bi-clock-history"></i> Timeline
+                </button>
+              </li>
+            </ul>
+
+            <!-- Tabs Content -->
+            <div class="tab-content p-3" id="detailTabsContent">
+              <!-- Overview Tab -->
+              <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="info-box p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px;">
+                      <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-building" style="font-size: 24px; color: var(--purple-accent);"></i>
+                        <div class="ms-3">
+                          <small class="text-muted d-block" style="font-size: 11px;">COMPANY</small>
+                          <strong id="detail-company-full">Company Name</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="info-box p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px;">
+                      <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-briefcase" style="font-size: 24px; color: var(--purple-accent);"></i>
+                        <div class="ms-3">
+                          <small class="text-muted d-block" style="font-size: 11px;">POSITION</small>
+                          <strong id="detail-position-full">Position Title</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="info-box p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px;">
+                      <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-calendar-check" style="font-size: 24px; color: var(--purple-accent);"></i>
+                        <div class="ms-3">
+                          <small class="text-muted d-block" style="font-size: 11px;">APPLIED ON</small>
+                          <strong id="detail-applied-date">Date</strong>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="info-box p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px;">
+                      <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-flag-fill" style="font-size: 24px; color: var(--purple-accent);"></i>
+                        <div class="ms-3">
+                          <small class="text-muted d-block" style="font-size: 11px;">STATUS</small>
+                          <span id="detail-status-badge" class="badge">Status</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Details Tab -->
+              <div class="tab-pane fade" id="details" role="tabpanel">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="detail-item mb-3 p-3" style="background: var(--dark-card); border-left: 3px solid var(--purple-accent); border-radius: 8px;">
+                      <h6 class="mb-2"><i class="bi bi-globe"></i> Source</h6>
+                      <p class="mb-0" id="detail-source">Not specified</p>
+                    </div>
+                  </div>
+                  <div class="col-12" id="detail-location-container" style="display: none;">
+                    <div class="detail-item mb-3 p-3" style="background: var(--dark-card); border-left: 3px solid var(--purple-accent); border-radius: 8px;">
+                      <h6 class="mb-2"><i class="bi bi-geo-alt"></i> Location</h6>
+                      <p class="mb-0" id="detail-location">Not specified</p>
+                    </div>
+                  </div>
+                  <div class="col-12" id="detail-salary-container" style="display: none;">
+                    <div class="detail-item mb-3 p-3" style="background: var(--dark-card); border-left: 3px solid var(--purple-accent); border-radius: 8px;">
+                      <h6 class="mb-2"><i class="bi bi-cash"></i> Salary Range</h6>
+                      <p class="mb-0" id="detail-salary">Not specified</p>
+                    </div>
+                  </div>
+                  <div class="col-12" id="detail-type-container" style="display: none;">
+                    <div class="detail-item mb-3 p-3" style="background: var(--dark-card); border-left: 3px solid var(--purple-accent); border-radius: 8px;">
+                      <h6 class="mb-2"><i class="bi bi-clock"></i> Job Type</h6>
+                      <p class="mb-0" id="detail-type">Not specified</p>
+                    </div>
+                  </div>
+                  <div class="col-12" id="detail-requirements-container" style="display: none;">
+                    <div class="detail-item mb-3 p-3" style="background: var(--dark-card); border-left: 3px solid var(--purple-accent); border-radius: 8px;">
+                      <h6 class="mb-2"><i class="bi bi-check2-square"></i> Requirements</h6>
+                      <div id="detail-requirements" style="white-space: pre-line;">Not specified</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notes Tab -->
+              <div class="tab-pane fade" id="notes" role="tabpanel">
+                <div class="p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px; min-height: 200px;">
+                  <div id="detail-notes-content" style="white-space: pre-line; line-height: 1.6;">
+                    No notes added yet.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Timeline Tab -->
+              <div class="tab-pane fade" id="timeline" role="tabpanel">
+                <div class="timeline-container">
+                  <div class="timeline-item d-flex mb-3">
+                    <div class="timeline-icon me-3">
+                      <div style="width: 40px; height: 40px; background: rgba(139, 92, 246, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-send-fill" style="color: var(--purple-accent);"></i>
+                      </div>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px;">
+                        <h6 class="mb-1">Application Submitted</h6>
+                        <small class="text-muted" id="detail-timeline-applied">Date</small>
+                        <p class="mb-0 mt-2" style="font-size: 13px;">Initial application submitted</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="timeline-item d-flex mb-3" id="detail-timeline-days">
+                    <div class="timeline-icon me-3">
+                      <div style="width: 40px; height: 40px; background: rgba(139, 92, 246, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-hourglass-split" style="color: var(--purple-accent);"></i>
+                      </div>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="p-3" style="background: var(--dark-card); border: 1px solid var(--dark-border); border-radius: 8px;">
+                        <h6 class="mb-1">Days Since Application</h6>
+                        <small class="text-muted">Time elapsed</small>
+                        <p class="mb-0 mt-2" style="font-size: 13px;"><strong id="detail-days-count">0 days</strong> since you applied</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn" style="background: linear-gradient(135deg, #f59e0b, #f97316); color: white;" onclick="generateCoverLetter()" id="cover-letter-btn">
+              <i class="bi bi-file-earmark-text"></i> Generate Cover Letter
+            </button>
+            <button type="button" class="btn btn-success" onclick="generateFollowupEmail()" id="followup-btn">
+              <i class="bi bi-envelope-paper"></i> Generate Follow-up Email
+            </button>
+            <button type="button" class="btn btn-primary" onclick="openEditFromDetails()">
+              <i class="bi bi-pencil"></i> Edit Application
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cover Letter Modal -->
+    <div class="modal fade" id="coverLetterModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b, #f97316); color: white;">
+            <h5 class="modal-title">
+              <i class="bi bi-file-earmark-text-fill"></i> AI-Generated Cover Letter
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="cover-letter-loading" style="display: none; text-align: center; padding: 40px;">
+              <div class="spinner-border" style="color: #f59e0b;" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-3 text-muted">AI is crafting your personalized cover letter...</p>
+            </div>
+            
+            <div id="cover-letter-content" style="display: none;">
+              <div class="alert alert-info mb-3" style="background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b; color: var(--text-primary);">
+                <i class="bi bi-lightbulb"></i> <strong>AI Pro Tip:</strong> This cover letter is tailored to the job using your profile. Review and add 1-2 personal touches before sending!
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label class="form-label fw-bold mb-0">Cover Letter Content</label>
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('cover-letter-text')">
+                      <i class="bi bi-clipboard"></i> Copy
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" onclick="downloadCoverLetter()">
+                      <i class="bi bi-download"></i> Download
+                    </button>
+                  </div>
+                </div>
+                <textarea class="form-control" id="cover-letter-text" rows="16" style="font-family: inherit; white-space: pre-wrap;"></textarea>
+              </div>
+              
+              <div class="alert alert-warning" style="font-size: 13px; background: rgba(245, 158, 11, 0.1); border: 1px solid #f59e0b;">
+                <i class="bi bi-exclamation-circle"></i> <strong>Remember:</strong> 
+                <ul class="mb-0 mt-2" style="padding-left: 20px;">
+                  <li>Add specific details about why you're interested in THIS company</li>
+                  <li>Mention any connections or research you've done</li>
+                  <li>Adjust the tone to match the company culture</li>
+                  <li>Keep it short - 250-300 words is perfect</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div id="cover-letter-error" style="display: none;">
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> <span id="cover-letter-error-message">Failed to generate cover letter</span>
+              </div>
+            </div>
+            
+            <div id="cover-letter-no-profile" style="display: none;">
+              <div class="alert alert-warning">
+                <i class="bi bi-person-exclamation"></i>
+                <strong>Profile Required:</strong> Please complete your professional profile first to generate cover letters.
+                <br><br>
+                <a href="/profile" class="btn btn-warning btn-sm mt-2">
+                  <i class="bi bi-person-badge"></i> Complete Profile Now
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Follow-up Email Modal -->
+    <div class="modal fade" id="followupModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header" style="background: linear-gradient(135deg, #22c55e, #16a34a); color: white;">
+            <h5 class="modal-title">
+              <i class="bi bi-envelope-paper-fill"></i> AI-Generated Follow-up Email
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="followup-loading" style="display: none; text-align: center; padding: 40px;">
+              <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-3 text-muted">AI is crafting your personalized follow-up email...</p>
+            </div>
+            
+            <div id="followup-content" style="display: none;">
+              <div class="alert alert-info mb-3" style="background: rgba(139, 92, 246, 0.1); border: 1px solid var(--purple-accent); color: var(--text-primary);">
+                <i class="bi bi-lightbulb"></i> <strong>AI Recommendation:</strong> <span id="followup-recommendation">Based on timing analysis</span>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">Subject Line</label>
+                <input type="text" class="form-control" id="followup-subject" readonly>
+                <button class="btn btn-sm btn-outline-primary mt-1" onclick="copyToClipboard('followup-subject')">
+                  <i class="bi bi-clipboard"></i> Copy
+                </button>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">Email Body</label>
+                <textarea class="form-control" id="followup-body" rows="12" readonly style="font-family: inherit;"></textarea>
+                <button class="btn btn-sm btn-outline-primary mt-1" onclick="copyToClipboard('followup-body')">
+                  <i class="bi bi-clipboard"></i> Copy
+                </button>
+              </div>
+              
+              <div class="alert alert-success" style="font-size: 13px;">
+                <i class="bi bi-check-circle"></i> <strong>Pro Tip:</strong> Personalize this email before sending. Add specific details from your conversation or research about the company.
+              </div>
+            </div>
+            
+            <div id="followup-error" style="display: none;">
+              <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> <span id="followup-error-message">Failed to generate email</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-success" onclick="copyEntireEmail()">
+              <i class="bi bi-clipboard-check"></i> Copy Entire Email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      .nav-tabs .nav-link {
+        color: var(--text-secondary);
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: none;
+        padding: 10px 16px;
+        font-size: 14px;
+        transition: all 0.2s;
+      }
+      
+      .nav-tabs .nav-link:hover {
+        color: var(--purple-light);
+        border-bottom-color: var(--purple-light);
+      }
+      
+      .nav-tabs .nav-link.active {
+        color: var(--purple-accent);
+        background: none;
+        border-bottom-color: var(--purple-accent);
+      }
+      
+      .info-box:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+        transition: all 0.2s;
+      }
+      
+      .detail-item h6 {
+        color: var(--purple-accent);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .timeline-item {
+        position: relative;
+      }
+      
+      .timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 19px;
+        top: 50px;
+        width: 2px;
+        height: calc(100% - 20px);
+        background: var(--dark-border);
+      }
+    </style>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/js/apple-animations.js"></script>
     <script src="/static/js/main.js"></script>
   </body>
 </html>
