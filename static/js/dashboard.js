@@ -13,6 +13,15 @@ async function fetchDashboardData() {
     updateStats(stats, apps);
     updateCharts(stats, apps);
     updateRecentApps(apps);
+    
+    // Load AI insights if there are enough applications
+    if (apps.length >= 3) {
+      loadAIInsights();
+    } else {
+      // Show empty state
+      document.getElementById('ai-insights-section').style.display = 'block';
+      document.getElementById('insights-empty').style.display = 'block';
+    }
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
   }
@@ -187,6 +196,75 @@ function getLast30Days() {
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+}
+
+// AI Insights Functions
+async function loadAIInsights() {
+  const section = document.getElementById('ai-insights-section');
+  const loading = document.getElementById('insights-loading');
+  const content = document.getElementById('insights-content');
+  const error = document.getElementById('insights-error');
+  const empty = document.getElementById('insights-empty');
+  
+  // Show section and loading state
+  section.style.display = 'block';
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  error.style.display = 'none';
+  empty.style.display = 'none';
+  
+  try {
+    const response = await fetch('/api/ai/analyze-applications');
+    const result = await response.json();
+    
+    if (result.success && result.data) {
+      const insights = result.data.insights || [];
+      const recommendations = result.data.recommendations || [];
+      
+      // Populate insights
+      const insightsList = document.getElementById('insights-list');
+      insightsList.innerHTML = '';
+      
+      if (insights.length === 0) {
+        insightsList.innerHTML = '<p class="text-muted"><em>Not enough data for insights yet.</em></p>';
+      } else {
+        insights.forEach(insight => {
+          const div = document.createElement('div');
+          div.className = 'insight-item';
+          div.innerHTML = `<i class="bi bi-graph-up" style="color: var(--purple-accent);"></i> ${escapeHtml(insight)}`;
+          insightsList.appendChild(div);
+        });
+      }
+      
+      // Populate recommendations
+      const recommendationsList = document.getElementById('recommendations-list');
+      recommendationsList.innerHTML = '';
+      
+      if (recommendations.length === 0) {
+        recommendationsList.innerHTML = '<p class="text-muted"><em>Keep applying! More data will generate better recommendations.</em></p>';
+      } else {
+        recommendations.forEach(rec => {
+          const div = document.createElement('div');
+          div.className = 'recommendation-item';
+          div.innerHTML = `<i class="bi bi-check2-circle" style="color: #22c55e;"></i> ${escapeHtml(rec)}`;
+          recommendationsList.appendChild(div);
+        });
+      }
+      
+      // Show content
+      loading.style.display = 'none';
+      content.style.display = 'block';
+      
+    } else {
+      throw new Error(result.error || 'Failed to load insights');
+    }
+    
+  } catch (err) {
+    console.error('AI Insights error:', err);
+    loading.style.display = 'none';
+    error.style.display = 'block';
+    document.getElementById('insights-error-message').textContent = err.message || 'Failed to load AI insights. Please try again later.';
+  }
 }
 
 async function syncGmail() {
