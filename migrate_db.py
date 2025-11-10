@@ -1,6 +1,8 @@
 """
 Migration script to add notes column to existing database
 """
+import os
+import sqlite
 
 
 BASE_DIR = os.path.dirname(__file__)
