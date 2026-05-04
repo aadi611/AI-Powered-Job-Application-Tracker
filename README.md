@@ -10,7 +10,8 @@ A revolutionary job application tracking system with **AI-powered job parsing**,
 
 ## ✨ Revolutionary Features
 
-## 🤖 **AI-Powered Smart Features** ⭐ NEW!
+##
+ 🤖 **AI-Powered Smart Features** ⭐ NEW!
 
 #### 1. Smart Job Post Parser
 - **One-Click Job Extraction**: Paste any job description, AI does the rest
