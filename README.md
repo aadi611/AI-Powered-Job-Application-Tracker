@@ -8,7 +8,7 @@ A revolutionary job application tracking system with **AI-powered job parsing**,
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-### ✨ Revolutionary Features
+### ✨ Revolutionary Feature
 
 ### 🤖 **AI-Powered Smart Features** ⭐ NEW!
 
