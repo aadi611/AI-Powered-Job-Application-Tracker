@@ -63,6 +63,7 @@ class UserProfile(db.Model):
 with app.app_context():
     # Ensure tables exist when the app module is imported/run
     db.create_all()
+    print(create_all)
 
 @app.route('/')
 def index():
