@@ -1,6 +1,6 @@
 """
-AI Service - Centralized OpenAI Integration
-Handles all AI-powered features with API key management
+AI Service Centralized OpenAI Integration
+Handles all AI powered features with API key management
 """
 
 import os
