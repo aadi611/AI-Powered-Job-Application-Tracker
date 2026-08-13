@@ -67,4 +67,4 @@ Ideas to make this genuinely more useful, roughly in order of impact:
 
 ---
 
-**Built with ❤️ by [Aadityan Gupta](https://github.com/aadi611)**
+**Built with  by [Aadityan Gupta](https://github.com/aadi611)**
