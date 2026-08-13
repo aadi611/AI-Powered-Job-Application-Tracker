@@ -409,6 +409,7 @@ Give a ⭐️ if this project helped you track your job applications more effect
 
 ---
 
-**Built with ❤️ by [Your Name](https://github.com/yourusername)**
+**Built with ❤️ by [Aadityan Gupta](https://github.com/aadi611)**
+
 
 *Making job hunting more organized, one application at a time.*
