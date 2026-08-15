@@ -64,7 +64,5 @@ Ideas to make this genuinely more useful, roughly in order of impact:
 5. **One-click capture** — a browser extension or bookmarklet that sends the current job posting straight to the AI parser instead of copy-pasting.
 6. **Tests/CI** — `test_*.py` files exist but aren't wired into CI; add a GitHub Actions workflow to run them on push.
 7. **Deployment guide** — Dockerfile + instructions for running this somewhere persistent (Render, Fly.io, etc.) instead of only `localhost`.
-
 ---
-
 **Built with  by [Aadityan Gupta](https://github.com/aadi611)**
