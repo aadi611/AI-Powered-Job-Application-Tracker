@@ -17,6 +17,7 @@ def run_sync():
     conn.commit()
     conn.close()
     print('Daily sync complete')
+    print('Sync timestamp:', datetime.utcnow().isoformat())
 
 if __name__ == '__main__':
     run_sync()
